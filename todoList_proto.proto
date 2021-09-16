@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "/todo";
+package todo;
+
+service TodoList {
+    rpc addTodoList(Todo) returns (TodoID);
+}
+
+message Todo {
+    string nickName = 1;
+    string toDo = 2;
+}
+
+message TodoID {
+    string value = 1;
+}
