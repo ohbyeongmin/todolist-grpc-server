@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,11 +22,14 @@ const MONGO_URI = "mongodb://127.0.0.1:27017"
 const DATABSE_NAME = "todo_database_test"
 const COLLECTION_NAME = "todo_list"
 
+type DB interface {
+	InsertTodo(string, string) string
+	UpdateTodo(string, string) string
+}
+
 type MongoClient struct {
 	client *mongo.Client
 }
-
-var TodoConn *MongoClient
 
 func connectDB() *mongo.Client {
 	client, err := mongo.NewClient(options.Client().ApplyURI(MONGO_URI))
@@ -43,7 +47,7 @@ func (c *MongoClient) getCollection() *mongo.Collection {
 	return c.client.Database(DATABSE_NAME).Collection(COLLECTION_NAME)
 }
 
-func (c *MongoClient) InsertTodo(nick string, td string) *mongo.InsertOneResult {
+func (c *MongoClient) InsertTodo(nick string, td string) string {
 	todoCollection := c.getCollection()
 	newTodo := Todo{
 		ID:       primitive.NewObjectID(),
@@ -55,10 +59,10 @@ func (c *MongoClient) InsertTodo(nick string, td string) *mongo.InsertOneResult 
 	if err != nil {
 		log.Fatal(err)
 	}
-	return result
+	return fmt.Sprintf("%x", result.InsertedID)
 }
 
-func (c *MongoClient) UpdateTodo(targetId string, td string) *mongo.UpdateResult {
+func (c *MongoClient) UpdateTodo(targetId string, td string) string {
 	todoCollection := c.getCollection()
 	id, _ := primitive.ObjectIDFromHex(targetId)
 	result, err := todoCollection.UpdateOne(
@@ -69,10 +73,19 @@ func (c *MongoClient) UpdateTodo(targetId string, td string) *mongo.UpdateResult
 	if err != nil {
 		log.Fatal(err)
 	}
-	return result
+	return fmt.Sprintf("%x", result.UpsertedID)
 }
 
+type Service struct {
+	DBservice DB
+}
+
+var SVC Service
+
 func init() {
-	TodoConn = &MongoClient{}
+	TodoConn := MongoClient{}
 	TodoConn.client = connectDB()
+	SVC = Service{
+		DBservice: &TodoConn,
+	}
 }

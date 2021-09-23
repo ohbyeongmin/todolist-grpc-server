@@ -20,7 +20,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	pb.RegisterTodoListServer(s, &service.Server{
-		TodoDB: db.TodoConn,
+		GrpcService: &db.SVC,
 	})
 	log.Printf("Starting gRPC listener on port " + port)
 	if err := s.Serve(lis); err != nil {
